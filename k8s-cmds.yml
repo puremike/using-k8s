@@ -1,0 +1,15 @@
+# kubectl apply -f <yaml-filename>
+# kubectl get pods - lists all pods
+# kubectl delete pod <podname> - delete pod
+# kubectl describe pod <podname> - describe the pod
+# kubectl logs <podname> - stream the logs
+# kubectl logs -f <podname> - live stream the logs
+# kubectl port-forward <podname> 8080:5000 - port
+# kubectl logs -f <podname> -c <podname>
+# kubectl get namespaces - list all the namespaces
+# kubectl get pods -n default - list all the pods in the 'default' namespace
+# kubectl delete pods --all -n default - delete all the pods in the 'default' namespace
+# kubectl create namespace <namespace-name> - create a new namespace
+# kubectl delete namespace <namespace-name> - delete namespace
+# kubectl get deployments - get deployment
+# kubectl rollout undo deployment/<deployment_name> - rollback deployment

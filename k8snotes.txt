@@ -1,0 +1,370 @@
+# k8s provides the following:
+  - Declarative Deployment
+  - Resiliency and Self-healing
+  - Horizontal Scaling
+  - Rolling Updates
+  - Resource Management
+  - Load Balancing
+  - Storage Orchestration
+  - Configuration Management
+  - Vendor Neutrality
+  - Extensibility
+  - Service Discovery & Networking
+  - Liveness & Readiness
+
+
+# PODS AND CONTAINERS
+
+Kubernetes is a container orchestration platform that coordinates the collaboration of Master Nodes and Worker Nodes. Master Nodes (Control Plane) are responsible for scheduling and deciding where applications run. Worker Nodes provide the infrastructure to actually run the applications. In a single-node cluster, your computer plays the role of Master and Worker Node.
+
+Containers
+Containers run applications in isolation with their dependencies, making them highly portable.
+
+Pods
+In Kubernetes, pods are the smallest deployable units and encapsulate application containers.
+
+Pod Configuration
+
+Metadata:
+Name: Uniquely identifies the pod
+Labels: Categorize pods into distinct groups for flexible querying
+Runtime Requirements (specified under 'spec'):
+Container name
+Image sourcE
+Port for serving requests
+Resource requirements (CPU and memory)
+Memory limit and request should be the same
+CPU limit should rarely be set (as per Kubernetes best practices)
+
+Multi-Container Pods
+Pods can run multiple containers, enabling sidecar patterns where auxiliary sidecar containers can communicate with the main application container via localhost.
+
+Port Forwarding in Kubernetes
+Port forwarding creates a temporary connection between your local machine and a pod in the cluster. It's primarily used for debugging and testing purposes. The command structure is:  kubectl port-forward <pod-name> <local-port>:<pod-port>. For example, kubectl port-forward mypod 808
+
+
+# SERVICE DISCOVERY
+
+The Service primitive in Kubernetes abstracts away network complexities and provides a durable endpoint for accessing pods.
+
+NodePort Service
+Allows external access to the Kubernetes network by exposing a static port on the node (range: 30000-32767).
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: grade-submission-portal
+spec:
+  type: NodePort
+  selector:
+    app: grade-submission-portal
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
+      
+The external request is initiated on the node's static port  (nodePort: 30080).
+
+The request enters the cluster through the Service's internal port (port: 8080). With NodePort services, this internal port can be any valid port number, as the external nodePort (30080) will be mapped to whatever internal port is specified.
+
+The service acts as a proxy by directing the request to a matching pod using a label selector.
+
+The service specifies a target port (targetPort: 8080) that ensures the request reaches the container port on the pod.
+
+Note: The NodePort service is often used when prototyping, rarely in practice.
+
+ClusterIP Service
+Used for internal pod-to-pod communication within the cluster.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+  ports:
+    - port: 8080
+      targetPort: 8080
+
+Pods within the cluster can access the service using its name (backend-service) and service's internal port (port: 8080).
+
+The service acts as a proxy by directing the request to a matching pod using a label selector.
+
+The service specifies a target port (targetPort: 8080) that ensures the request reaches the container port on the pod.
+
+
+# NAMESPACES
+
+While a Kubernetes cluster is physically distributed across multiple machines (master and worker nodes), developers interact with it as a single entity partitioned into logical divisions called namespaces. These namespaces group together closely related resources.
+
+Deploying to a Specific Namespace
+Command-line approach: kubectl apply -f my-deployment.yaml -n my-namespace
+
+In YAML configuration:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: my-namespace
+
+
+Default Namespace
+If no namespace is specified, Kubernetes will place the resource in the default namespace.
+
+Best Practices for Developers
+Use namespaces to organize and isolate your workloads logically.
+
+Be aware of the namespace you're working in to avoid unintended interactions between resources.
+
+Collaborate with your cluster administrators to understand any namespace-level policies or quotas that may affect your deployments.
+
+
+# SELF-HEALING AND RESILIENCY
+
+By default, every container in a pod has a restart policy of "Always". This means Kubernetes restarts a container whenever its process terminates, regardless of the exit code.
+
+Behind the Scenes
+Kubernetes Controllers: Various controllers work tirelessly in the background to maintain the desired state of your applications.
+
+Desired State: The controllers compare the current state of the pod with its desired state and take actions to reconcile any differences.
+
+Continuous Monitoring: Kubernetes constantly monitors the health of containers and takes corrective actions when needed.
+
+Process Termination vs. Application Unresponsiveness
+In the previous lesson, we saw how Kubernetes automatically detects and restarts terminated containers. Later in this course, we'll cover liveness and readiness probes, which allow you to configure Kubernetes to detect unresponsive applications and restart them automatically.
+
+To prepare for this, it's important to understand the difference between process termination and application unresponsiveness:
+
+Process Termination:
+
+Kubernetes automatically detects when a process within a container terminates.
+
+Kubernetes immediately takes action based on the restart policy, without any additional configuration, as seen in the lesson.
+
+Examples:
+
+Out of Memory (OOM) Error: If a container exceeds its memory limit, the process is terminated by the system, triggering a restart.
+
+Application Crash: If your application encounters an unhandled exception and exits, Kubernetes will restart the container.
+
+Application Unresponsiveness:
+
+This occurs when an application is still running but not functioning correctly.
+
+Kubernetes cannot automatically detect this situation without us additionally configuring liveness probes, which will be covered in a future lesson.
+
+Examples:
+
+Deadlock Situations: In cases where your application becomes unresponsive due to a deadlock, Kubernetes can restart the container if configured with appropriate liveness probes (a topic for future lessons).
+
+
+# DEPLOYMENT AND POD REPLICAS
+
+A Deployment in Kubernetes allows us to declaratively manage a set of pods. The two key specifications in a Deployment are the number of pod replicas, and the pod template (defining how each pod should be constructed). This Deployment declares our desired state: 3 replicas of pods based on the specified template:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: my-app
+        image: my-app:v1
+Behind the scenes:
+
+The Deployment Controller creates a ReplicaSet based on this specification.
+
+A ReplicaSet is a Kubernetes resource that ensures a specified number of pod replicas are running at all times.
+
+The ReplicaSet Controller watches for ReplicaSet objects and creates pods based on them.
+
+The ReplicaSet Controller continuously monitors the state of the pods.
+
+If a pod terminates or fails, the ReplicaSet Controller automatically creates a new one to maintain the desired number of replicas.
+
+The Deployment Controller manages the overall lifecycle of the Deployment, including updates and rollbacks (discussed in the next section), while the ReplicaSet Controller handles the day-to-day management of pods. This orchestration happens automatically. As developers, we simply declare our desired state in the Deployment object, and Kubernetes handles the rest, ensuring our application remains running as specified.
+
+# ROLLING UPDATE
+
+Without rolling updates, upgrading an application could lead to significant downtime. Imagine a scenario where all pod replicas running v1 of an application are simultaneously taken down and replaced with v2. This would result in a period where no pods are available to serve traffic, causing service interruption. Rolling updates solve this problem by gradually replacing old pods with new ones, ensuring that the application remains available throughout the upgrade process.
+
+How Rolling Updates Work
+1.  The process begins when you update the pod template in a Deployment resource. Here's an example:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grade-submission-api
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: grade-submission-api
+        image: registry/grade-submission-api:v1 # Update to v2
+2. The Deployment controller creates a new ReplicaSet for v2 pods while preserving the old ReplicaSet for v1 pods. A ReplicaSet is a Kubernetes resource that ensures a specified number of pod replicas are running at all times.
+
+During a rolling update, the Deployment manages two ReplicaSets:
+
+   ReplicaSet 1 (v1): 3 pods ----> 0 pods
+   ReplicaSet 2 (v2): 0 pods ----> 3 pods
+3. New v2 pods are created while old v1 pods are gradually terminated. This process continues until all pods are running the new version.
+
+# Controlling the Rolling Update
+By default, Kubernetes implements a rolling update strategy, but you can control its behavior using two parameters:
+
+maxUnavailable: The maximum number of pods that can be unavailable during the update.
+
+maxSurge: The maximum number of pods that can be created over the desired number of pods.
+
+Here's how you can specify these in your Deployment:
+
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+With these settings and 3 replicas, you might see output like this during the update:
+
+NAME                                   READY   STATUS
+grade-submission-api-7f9dd7f789-2x9p4   1/1     Running
+grade-submission-api-7f9dd7f789-9k2xn   1/1     Running
+grade-submission-api-7f9dd7f789-qp6g7   1/1     Running
+grade-submission-api-6c54bd5869-lmn0p   0/1     ContainerCreating
+This output reflects our settings:
+
+All three original pods are running, respecting maxUnavailable: 1.
+
+One new pod is being created, adhering to maxSurge: 1.
+
+As the update progresses:
+
+NAME                                   READY   STATUS
+grade-submission-api-7f9dd7f789-2x9p4   1/1     Running
+grade-submission-api-7f9dd7f789-9k2xn   1/1     Running
+grade-submission-api-7f9dd7f789-qp6g7   0/1     Terminating
+grade-submission-api-6c54bd5869-lmn0p   1/1     Running
+grade-submission-api-6c54bd5869-3fgh2   1/1     Running
+Here, we see:
+
+One old pod terminating (maxUnavailable: 1)
+
+Two new pods running, temporarily giving us 4 pods total (maxSurge: 1)
+
+At least 2 pods always fully running, ensuring minimal disruption
+
+This process continues until all pods are updated to the new version.
+
+Rollbacks
+If issues arise with the new version, Kubernetes makes rollbacks easy. The old ReplicaSet (v1) is kept, allowing for quick reversion. During a rollback:
+
+1. The v2 ReplicaSet is scaled down to 0 pods.
+
+2. A new ReplicaSet based on the v1 configuration is created and scaled up to the desired number of replicas.
+
+3. This process also uses a rolling update strategy, ensuring minimal downtime during the rollback.
+
+ReplicaSet 1 (v1): 3 pods ----> 0 pods
+ReplicaSet 2 (v2): 3 pods ----> 0 pods
+ReplicaSet 3 (v1): 0 pods ----> 3 pods
+Benefits of Rolling Updates
+1. Minimal Downtime: By gradually replacing pods, the application remains available throughout the update process.
+
+2. Version Control: Easy rollbacks to previous versions if issues are detected.
+
+3. Traffic Management: Ensures that user traffic is always directed to available pods.
+
+
+# LIVENESS AND READINESS PROBES
+
+Liveness The liveness endpoint returns a 200 status if the application is operational, or a 500 status if it's not. The liveness probe checks this endpoint and considers the app healthy only if it receives a 200 status. Any other response, or no response at all, triggers a container restart.
+
+Readiness The readiness endpoint verifies if the application has successfully connected to all components necessary for serving traffic. It returns a 200 status only when all required connections and initializations are complete, and a 500 status otherwise. The readiness probe uses this endpoint to determine if a container is ready to accept traffic. If the probe receives anything other than a 200 status, or no response, it keeps the container out of service.
+
+Initial Delay and Period The initial delay sets how long to wait before the first probe runs, while the period determines the frequency of subsequent probes. For example, if an app takes 20 seconds to start, set the liveness probe's initial delay to at least 20 seconds. This ensures the probe only begins checking after the application has had sufficient time to initialize:
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 25
+  periodSeconds: 5
+
+
+For readiness probes, the initial delay is less critical. An unresponsive app during startup correctly indicates it's not yet ready for traffic.
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8080
+  periodSeconds: 5
+
+
+Usage Use liveness probes to detect and restart unhealthy containers. Use readiness probes to determine when a container is ready to start accepting traffic. Together, they ensure your application remains healthy and responsive in a Kubernetes environment.
+
+
+# STATEFULSET AND PERSISTENT VOLUMES
+
+Anatomy of a Connection String
+Understanding the structure of basic authentication, where credentials are included directly in the URI, will be valuable in our upcoming lessons. This URI is composed of three main parts: Scheme, Auth Credentials, and Service Location.
+
+
+When a client (grade-submission-api) uses this URI to connect to MongoDB, here's what happens:
+
+Kubernetes routing is based solely on the Service Location (mongodb-service:27017), regardless of the Scheme used (mongodb://, http://, https://, etc.), or the existence of credentials.
+
+The ClusterIP Service mongodb-service receives the request at its service port 27017.
+
+The Service selects one of the MongoDB pods based on a label selector, and forwards the entire original URI to the selected pod, preserving all parts (Scheme, Auth Credentials, and Service Location).
+
+MongoDB receives the full URI at its container port 27017, and authenticates the connection using the provided credentials.
+
+It's worth noting that this process is consistent across different types of services in Kubernetes. For example:
+
+Elasticsearch
+
+MySQL
+
+In each case, Kubernetes focuses on the Service Location for routing, while the application (MySQL or Elasticsearch) handles the Scheme and Auth Credentials as needed.
+
+
+Managing stateful applications and their storage requirements is time-consuming and error-prone.
+
+Automatic Storage Orchestration
+With Kubernetes, you can fully rely on the control plane to manage storage for your stateful applications:
+
+Automatic provisioning and attachment of storage volumes
+
+Seamless data persistence across pod lifecycle events
+
+Built-in mechanisms for maintaining pod identity and state
+
+Key Components of StatefulSet Storage
+Persistent Volume Claims (PVCs): Requests for storage resources
+
+Volume Claim Templates:
+
+Define the PVC specification within the StatefulSet
+
+Automatically generate PVCs for each pod in the StatefulSet
+
+Example: If a StatefulSet has 3 replicas, 3 PVCs will be dynamically created
+
+Persistent Volumes (PVs): Actual storage resources that fulfill PVCs
+
+Storage Orchestration:
+
+Each StatefulSet pod gets its own PVC, generated from the template
+
+PVC binds to an appropriate PV
+
+PV is mounted at the specified directory in the stateful container
+
+
