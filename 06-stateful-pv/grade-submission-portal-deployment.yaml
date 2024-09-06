@@ -41,12 +41,3 @@ spec:
               memory: '128Mi'
           ports:
             - containerPort: 5001
-
-        - name: grade-submission-portal-health
-          image: rslim087/kubernetes-course-grade-submission-portal-health-checker
-          resources:
-            requests:
-              memory: '128Mi'
-              cpu: '500m'
-            limits:
-              memory: '128Mi'
