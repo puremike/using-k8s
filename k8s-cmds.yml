@@ -13,3 +13,4 @@
 # kubectl delete namespace <namespace-name> - delete namespace
 # kubectl get deployments - get deployment
 # kubectl rollout undo deployment/<deployment_name> - rollback deployment
+# kubectl describe ingress <ingress_name> - describe ingress

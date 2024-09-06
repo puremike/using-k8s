@@ -396,3 +396,103 @@ data:
 Important Note: while Secrets are base64 encoded, they are not encrypted. Additional security measures are typically implemented to protect sensitive data in clusters. These can include external secret management systems, or implementing Kubernetes Encryption Providers. However, specific approaches are beyond the scope of this overview as they vary based on organizational needs and security policies.
 
 
+# HORIZONTAL POD SCALING (HPA)
+
+Key Takeaways
+The Horizontal Pod Autoscaler automatically scales the number of pods in a deployment based on observed CPU utilization (most commonly).
+
+Key Components of an HPA Configuration
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: grade-submission-portal-hpa
+  namespace: grade-submission
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: grade-submission-portal
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+        
+Autoscaling Behavior: The HPA will increase or decrease the number of replicas to maintain the target CPU utilization.
+
+Scaling Range: The number of pods will be adjusted between 1 and 10 based on the CPU utilization.
+
+Resource Metrics: While this example uses CPU, HPAs can also use memory or custom metrics.
+
+Target Utilization: 50% target utilization is a common starting point, but this can be adjusted based on application needs.
+
+Namespace Scoping: The HPA is namespace-specific, allowing for isolated scaling policies across different parts of your application.
+
+Scaling Algorithm: Kubernetes uses a control loop to periodically adjust the number of replicas based on the observed metrics.
+
+Understanding and effectively configuring HPAs is crucial for building scalable and efficient applications in Kubernetes, ensuring optimal resource utilization and performance under varying loads.
+
+
+# INGRESS CONTROLLER
+
+The Ingress controller in Kubernetes acts as a reverse proxy, which means it sits in front of web servers and acts on their behalf to forward external HTTP requests to the appropriate internal services.
+
+The Ingress controller uses the Ingress resource to determine how to route traffic. Here's a step-by-step breakdown of how it works:
+
+  1.    An external HTTP request arrives at the Ingress controller.
+
+  2.   The controller examines the Ingress resource, which is defined as follows:
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grade-submission-portal-ingress
+  namespace: grade-submission
+spec:
+  ingressClassName: nginx
+  rules:     
+  - http:
+      paths:
+      - pathType: Prefix
+        path: "/"    
+        backend:
+          service:
+            name: grade-submission-portal
+            port: 
+              number: 5001
+              
+  3.   The controller identifies that this is an Ingress resource (kind: Ingress) in the grade-submission namespace.
+
+  4.   It notes that the nginx Ingress controller should be used (ingressClassName: nginx).
+
+  5.   The controller then looks at the rules. In this case, there's a single rule that applies to all HTTP traffic.
+
+  6.   The rule specifies that all paths starting with / (path: "/") should be directed to the grade-submission-portal service on port 5001.
+
+  7.    Based on this rule, the Ingress controller forwards the request to the specified backend service.
+
+In the current configuration, the rules are quite permissive. Any host can connect, and all traffic is routed to the same service. This setup is common in development environments but may not be suitable for production.
+
+In a production environment, after purchasing a domain, you can implement more restrictive rules. For example:
+
+spec:
+  rules:
+  - host: grades.myuniversity.com
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: grade-submission-portal
+            port: 
+              number: 5001
+
+This configuration would only allow traffic from the specified host (grades.myuniversity.com) to be routed to the service. Any requests from other hosts would be rejected, providing an additional layer of security and control over incoming traffic.
+
+
+
