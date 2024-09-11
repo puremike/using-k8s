@@ -495,4 +495,64 @@ spec:
 This configuration would only allow traffic from the specified host (grades.myuniversity.com) to be routed to the service. Any requests from other hosts would be rejected, providing an additional layer of security and control over incoming traffic.
 
 
+## HELM CHART
+
+Helm is a package manager for Kubernetes that simplifies the deployment and management of applications. By using Helm Charts, you can manage complex Kubernetes applications as a single unit, simplifying deployment, upgrades, and rollbacks. This approach provides a more organized and maintainable way to handle Kubernetes resources compared to managing individual loose resources.
+Directory Structure
+
+A typical Helm Chart has the following structure:
+
+    mychart/
+      ├── Chart.yaml          # Contains chart information
+      ├── values.yaml         # Default configuration values
+      └── templates/          # Directory for template files
+          ├── deployment.yaml
+          ├── service.yaml
+          └── ingress.yaml
+
+    Chart.yaml: Metadata about the chart (name, version, dependencies)
+
+    values.yaml: Default configuration values that can be overridden
+
+    templates/: Directory containing Kubernetes manifest templates
+
+Common Helm Commands
+
+    Install a chart:
+
+        helm install [RELEASE_NAME] [CHART]
+
+    Uninstall a release:
+
+        helm uninstall [RELEASE_NAME]
+
+    Upgrade a release:
+
+        helm upgrade [RELEASE_NAME] [CHART]
+
+    List all releases:
+
+        helm list
+
+    View the manifest templates with values applied:
+
+        helm template [CHART]
+
+    Package a chart into a versioned archive file:
+
+        helm package [CHART_PATH]
+
+Deployment Workflow
+
+    Create or modify chart files in the chart directory.
+
+    Use helm template to preview the rendered Kubernetes manifests.
+
+    Install or upgrade the release using helm install or helm upgrade.
+
+    Monitor the deployment using kubectl commands.
+
+    If needed, use helm uninstall to remove the release and all associated resources.
+
+
 
