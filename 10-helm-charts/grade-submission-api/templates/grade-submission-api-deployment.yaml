@@ -21,13 +21,14 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 3000
-            initialDelaySeconds: {{ .Values.workload.livenessDelaySeconds }}
+              port: {{.Values.workload.port}}
+            initialDelaySeconds: {{ .Values.workload.livenessDelay}}
             periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /readyz
               port: {{.Values.workload.port}}
+              initialDelaySeconds: 10
             periodSeconds: 5
           envFrom:
             - configMapRef:
