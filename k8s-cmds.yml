@@ -19,7 +19,12 @@
 # helm template . - used to inject the helm values in the deployments, services, configMap, and secrets
 # help package . - used to package the helm values
 # helm install <chart_name> <package-name> - install the chart
+# helm install <release_name> . - install the release with the default template
 # helm uninstall <chart_name> - uninstall the chart
 # helm list - list all the installed charts
 # helm upgrade <chart_name> - upgrade the chart
 # helm rollback <chart_name> - rollback the upgrades
+
+# helm repo add bitnami https://charts.bitnami.com/bitnami
+# helm search repo bitnami
+# helm install my-release bitnami/<chart>

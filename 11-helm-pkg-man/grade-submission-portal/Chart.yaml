@@ -1,0 +1,4 @@
+apiVersion: v2
+name: grade-submission-portal
+description: A frontend application for our student grading system
+version: 1.0.0

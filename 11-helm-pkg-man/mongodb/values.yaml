@@ -1,0 +1,19 @@
+useStatefulSet: true
+
+auth:
+  enabled: false
+
+image:
+  registry: docker.io
+  repository: mongo
+  tag: 6.0.4-jammy
+
+persistence:
+  mountPath: /data/db
+# we used the helm package manager, specifically the bitnami/mongodb package
+# helm repo add bitnami https://charts.bitnami.com/bitnami
+# helm search repo bitnami
+
+# used the command: helm install mongodb bitnami/mongodb --version <> -f values.yaml -n mongodb - the -f values.yaml will tell bitnami to consider the latest configuration in the values.yaml file
+
+# used the command:
