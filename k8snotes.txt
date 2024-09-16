@@ -666,3 +666,65 @@ Monitor Operator Logs: Keep an eye on the operator's logs for insights into its 
 Stay Updated: Regularly update operators to benefit from new features and improved controllers
 
 By leveraging Kubernetes Operators, you can work with custom resources that abstract complex applications, letting you manage them just like you would any other Kubernetes resource.
+
+
+## DEPLOYING TO AWS
+
+When deploying to AWS, the infrastructure becomes more complex compared to running Kubernetes locally. Despite having multiple worker nodes, interacting with the cluster using kubectl still feels like interacting with a single, unified entity.
+
+Cluster Creation with eksctl:
+When creating a cluster using eksctl, you can specify the desired node type and the number of worker nodes.
+
+AWS offers a wide range of instance types, such as t3.medium, t3.large, or m5.xlarge. You can view all the available options in the AWS documentation and choose one that fits your budget and performance requirements.
+
+Here's an example command to create a cluster with eksctl:
+
+eksctl create cluster \
+  --name my-cluster \
+  --region us-west-2 \
+  --node-type t3.medium \
+  --nodes 3
+Ingress Controller and Load Balancer:
+When you deploy an nginx controller to your AWS cluster, it automatically provisions a load balancer.
+
+The load balancer is a physical server on AWS that receives external traffic via an external IP address.
+
+It balances the incoming traffic across the nodes running the nginx controller.
+
+In the current configuration, the rules are permissive, allowing any host to connect and routing all traffic to the same service:
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grade-submission-portal-ingress
+  namespace: grade-submission
+spec:
+  ingressClassName: nginx
+  rules:     
+  - http:
+      paths:
+      - pathType: Prefix
+        path: "/"    
+        backend:
+          service:
+            name: grade-submission-portal
+            port: 
+              number: 5001
+This setup is suitable for development environments but may not be ideal for production.
+
+Production Environment Considerations:
+In a production environment, after purchasing a domain and pointing it to the load balancer's external IP, you can implement more restrictive rules:
+
+spec:
+  rules:
+  - host: grades.myuniversity.com
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: grade-submission-portal
+            port: 
+              number: 5001
+By specifying a host (e.g., grades.myuniversity.com) in the Ingress rules, you can limit traffic to only be routed to the service from that specific host, providing an additional layer of security and control over incoming traffic.

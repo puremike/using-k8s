@@ -19,7 +19,7 @@
 # helm template . - used to inject the helm values in the deployments, services, configMap, and secrets
 # help package . - used to package the helm values
 # helm install <chart_name> <package-name> - install the chart
-# helm install <release_name> . - install the release with the default template
+# helm install <release_name> . -n <namespace> - install the release with the default template
 # helm uninstall <chart_name> - uninstall the chart
 # helm list - list all the installed charts
 # helm upgrade <chart_name> - upgrade the chart
@@ -28,3 +28,7 @@
 # helm repo add bitnami https://charts.bitnami.com/bitnami
 # helm search repo bitnami
 # helm install my-release bitnami/<chart>
+
+## EKSCTL
+
+# eksctl create cluster --name my-first-cluster --region eu-north-1 --node-type t3.micro --nodes 2 >>> cREATE A NEW CLUSTER
