@@ -1,0 +1,83 @@
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: mongodb-grade-submission
+  namespace: mongodb
+spec:
+  members: 1
+  type: ReplicaSet
+  version: '6.0.5'
+  security:
+    authentication:
+      modes: ['SCRAM']
+  users:
+    - name: user
+      db: grades
+      passwordSecretRef:
+        name: mongodb-user-password
+      roles:
+        - name: readWrite
+          db: grades
+      scramCredentialsSecretName: mongodb-grade-submission
+
+  statefulSet:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: mongodb-agent
+              image: 'quay.io/mongodb/mongodb-agent-ubi:12.0.32.7857-1'
+# Firstly, you need to add the mongodb helm chart to your k8s repo: helm repo add mongodb https://mongodb.github.io/helm-charts
+# Secondyl, you will install a release from the mongodb helm chart:
+# helm install <release_name> <helm-chart> --version <0.0.0> -n <namespace> ::::: for example >>>>>> helm install community-operator mongodb/community-operator --version 0.11.0 -n mongodb
+# Thirdly, you can use the mongodb community-operator-crd to create a yaml file for your mongodb statefulSets
+
+# apiVersion: mongodbcommunity.mongodb.com/v1
+# kind: MongoDBCommunity
+# metadata:
+#   name: example-mongodb
+# spec:
+#   members: 3
+#   type: ReplicaSet
+#   version: "6.0.5"
+#   security:
+#     authentication:
+#       modes: ["SCRAM"]
+#   users:
+#     - name: my-user
+#       db: admin
+#       passwordSecretRef:
+#         name: my-user-password
+#       roles:
+#         - name: clusterAdmin
+#           db: admin
+#         - name: userAdminAnyDatabase
+#           db: admin
+#       scramCredentialsSecretName: my-scram
+
+#   statefulSet:
+#     spec:
+#         # Name for the service object created by the operator
+#       serviceName: example-openshift-mongodb-svc
+#       selector: {}
+#         # Specifies a size for the data volume different from the default 10Gi
+#       volumeClaimTemplates:
+#         - metadata:
+#             name: data-volume
+#           spec:
+#             accessModes: [ "ReadWriteOnce", "ReadWriteMany" ]
+#             resources:
+#               requests:
+#                 storage: 50Gi
+
+#       template:
+#         # Adds a custom volume to the pods
+#         spec:
+#           volumes:
+#             - name: custom-volume
+#               emptyDir: {}
+#           containers:
+#           - name: mongodb-agent
+#             volumeMounts:
+#               - name: custom-volume
+#                 mountPath: /my-custom-version/mount-path
